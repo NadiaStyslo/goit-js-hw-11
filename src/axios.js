@@ -15,12 +15,12 @@ export async function findPicture(query, page) {
     page: page,
     per_page: 40,
     }
-    return await axios.get(`${BASE_URL}&${options}`)
-        .then(responce => {
-           
-            responce.data
-        //return responce.data;
-      
-    })
-  
+      try {
+    const res = await axios.get(`${BASE_URL}?${options}`);
+    return await res.data;
+  } catch (error) {
+    throw new Error(error);
+  }
 }
+  
+

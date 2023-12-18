@@ -10,7 +10,32 @@ const loadEl = document.querySelector('load-more');
 const galleryEl = document.querySelector('gallery');
 const boxEl = document.querySelector('box');
 
+let page = 1;
+let currentSum = 0;
+//
+const lightbox = new SimpleLightbox('.gallery a', {
+  captionsData: 'alt',
+  captionDelay: 250,
+  captionPosition: 'bottom',
+});
 
+loadEl.addEventListener("click", onLoad);
+searchForm.addEventListener('sumbit', onSumbit)
+
+function onSumbit(evt) {
+    evt.preventDefault();
+    galleryEl.innerHTML = "";
+    localStorage.clear()
+
+    const enterValue = evt.currentTarget[0].value.trim()
+    if (enterValue === '') {
+    loadEl.classList.add('visibility-hidden');
+    return Notiflix.Notify.failure('All fields must be filled!');
+  }
+  localStorage.setItem('key', enteredValue);
+  render();
+  searchForm.reset();
+}
 function createGallery(arr) {
     return arr
         .map(
@@ -40,23 +65,48 @@ function createGallery(arr) {
     ).join('')
 }
 
-const options = {
-  rootMargin: '100px',
-  threshold: 1.0,
-};
+// const options = {
+//   rootMargin: '100px',
+//   threshold: 1.0,
+// };
 
-const observer = new IntersectionObserver(sectionObserver, options);
-function sectionObserver(enteries, observer) {
-    enteries.forEach(entry => {
-        console.log(entry)
-        if (!entry.isIntersectin) {
-            return
-        }
-        console.log(entry);
-        headelMore(observer)
-    }
- 
-      
-    )
+// const observer = new IntersectionObserver(sectionObserver, options);
+// function sectionObserver(enteries, observer) {
+//     enteries.forEach(entry => {
+//         console.log(entry)
+//         if (!entry.isIntersectin) {
+//             return
+//         }
+//         console.log(entry);
+//         headelMore(observer)
+//     }
+//     ) 
+// }
+// let page = 1;
+// let currentQuery = '';
+// let availablePages = 0;
+
+// const lightbox = new SimpleLightbox('.gallery a');
+// searchForm.addEventListener('sumbit', handleSearch);
+
+// function handleSearch(evt) {
+//     evt.preventDefault()
+//       currentQuery = evt.currentTarget.elements.searchQuery.value;
+//   gallery.innerHTML = '';
+//   page = 1;
+//     evt.currentTarget.reset();
     
-}
+//     findPicture(currentQuery, page)
+//         .then(data => {
+//             if (data.hits.length === 0) {
+//             Notify.failure(
+//           'Sorry, there are no images matching your search query. Please try again.'
+//         );
+//         return;
+//             }
+//             galleryEl.insertAdjacentHTML('beforeend',createGallery(data))
+//              availablePages = Math.ceil(data.totalHits / 40);
+//       lightbox.refresh();
+
+//     })
+// }
