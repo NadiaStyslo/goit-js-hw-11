@@ -1,15 +1,13 @@
+//
+import axios from 'axios';
 import Notiflix from 'notiflix';
-import simpleLightbox from 'simplelightbox';
+import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-import {findPicture} from './axios.js';
-
-
-const searchForm = document.querySelector('#search-form');
-const inputEl = document.querySelector('input');
-const loadEl = document.querySelector('load-more');
-const galleryEl = document.querySelector('gallery');
-const boxEl = document.querySelector('box');
-
+import { createMarkup } from './mark.js';
+//
+const form = document.querySelector('.search-form');
+const gallery = document.querySelector('.gallery');
+const loadMore = document.querySelector('.load-more');
 let page = 1;
 let currentSum = 0;
 //
@@ -18,51 +16,102 @@ const lightbox = new SimpleLightbox('.gallery a', {
   captionDelay: 250,
   captionPosition: 'bottom',
 });
-
-loadEl.addEventListener("click", onLoad);
-searchForm.addEventListener('sumbit', onSumbit)
-
-function onSumbit(evt) {
-    evt.preventDefault();
-    galleryEl.innerHTML = "";
-    localStorage.clear()
-
-    const enterValue = evt.currentTarget[0].value.trim()
-    if (enterValue === '') {
-    loadEl.classList.add('visibility-hidden');
+//
+//
+loadMore.addEventListener('click', onLoadMore);
+form.addEventListener('submit', onValueSubmit);
+//
+//
+//
+//  Отриання значення з input-a та запуск відмалювання зображень
+function onValueSubmit(event) {
+  event.preventDefault();
+  gallery.innerHTML = '';
+  localStorage.clear();
+  //
+  //
+  const enteredValue = event.currentTarget[0].value.trim();
+  if (enteredValue === '') {
+    loadMore.classList.add('visibility-hidden');
     return Notiflix.Notify.failure('All fields must be filled!');
   }
   localStorage.setItem('key', enteredValue);
   render();
-  searchForm.reset();
+  form.reset();
 }
-function createGallery(arr) {
-    return arr
-        .map(
-    ({
-      largeImageURL,
-      webformatURL,
-      tags,
-      likes,
-      views,
-      comments,
-      downloads,
-    }) => 
-      `<div class="photo-card">
-        <a href="${largeImageURL}">
-          <img src="${webformatURL}" alt="${tags}" loading="lazy" />
-          <div class="info">
-            <p class="info-item"> <b>Likes</b><br>${likes}</br> </p>
-            <p class="info-item"> <b>Views</b><br>${views}</br>
-            </p>
-            <p class="info-item"> <b>Comments</b><br>${comments}</br>
-            </p>
-            <p class="info-item"><b>Downloads</b><br>${downloads}</br>
-            </p>
-          </div>
-        </a>
-      </div>`
-    ).join('')
+//
+// Запит на сервер
+async function getGallery(page = 1) {
+  const BASE_URL = 'https://pixabay.com/api/';
+  const API_KEY = '41332989-a42d222afbe6c07d8529bbab0';
+  const q = localStorage.getItem('key');
+  const image_type = 'photo';
+  const orientation = 'horizontal';
+  const safesearch = 'true';
+  const per_page = 40;
+  //
+  //
+  const queryParams = new URLSearchParams({
+    key: API_KEY,
+    q,
+    image_type,
+    page,
+    per_page,
+    orientation,
+    safesearch,
+  });
+  try {
+    const res = await axios.get(`${BASE_URL}?${queryParams}`);
+    return await res.data;
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+//
+// Відмалювання зображення
+async function render() {
+  try {
+    const data = await getGallery(page);
+    //
+    //
+    if (!data.hits.length > 0) {
+      loadMore.classList.add('visibility-hidden');
+      return Notiflix.Notify.failure(
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
+    }
+    //
+    gallery.insertAdjacentHTML('beforeend', createMarkup(data.hits));
+    //
+    check(data.hits.length, data.totalHits);
+    lightbox.refresh();
+  } catch (error) {
+    console.log('error!', error);
+  }
+}
+//
+// Дозавантаження фото
+async function onLoadMore() {
+  try {
+    page += 1;
+    const data = await render();
+  } catch (error) {
+    console.log('error!', error);
+  }
+  lightbox.refresh();
+}
+//
+//  Перевірка на дозавантаження фото
+function check(current, total) {
+  currentSum += current;
+  if (currentSum >= total) {
+    loadMore.classList.add('visibility-hidden');
+    return Notiflix.Notify.info(
+      "We're sorry, but you've reached the end of search results."
+    );
+  }
+  Notiflix.Notify.success(`Hooray! We found ${currentSum} of ${total} images`);
+  loadMore.classList.remove('visibility-hidden');
 }
 
 // const options = {
