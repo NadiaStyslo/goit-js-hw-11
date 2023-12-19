@@ -1,161 +1,96 @@
-//
-import axios from 'axios';
-import Notiflix from 'notiflix';
+import './index.css';
+import { fetchImages } from './axios';
+import Notiflix from 'notiflix/build/notiflix-notify-aio'
 import SimpleLightbox from 'simplelightbox';
-import 'simplelightbox/dist/simple-lightbox.min.css';
-import { createMarkup } from './mark.js';
-//
-const form = document.querySelector('.search-form');
-const gallery = document.querySelector('.gallery');
-const loadMore = document.querySelector('.load-more');
-let page = 1;
-let currentSum = 0;
-//
-const lightbox = new SimpleLightbox('.gallery a', {
-  captionsData: 'alt',
-  captionDelay: 250,
-  captionPosition: 'bottom',
-});
-//
-//
-loadMore.addEventListener('click', onLoadMore);
-form.addEventListener('submit', onValueSubmit);
-//
-//
-//
-//  Отриання значення з input-a та запуск відмалювання зображень
-function onValueSubmit(event) {
-  event.preventDefault();
-  gallery.innerHTML = '';
-  localStorage.clear();
-  //
-  //
-  const enteredValue = event.currentTarget[0].value.trim();
-  if (enteredValue === '') {
-    loadMore.classList.add('visibility-hidden');
-    return Notiflix.Notify.failure('All fields must be filled!');
-  }
-  localStorage.setItem('key', enteredValue);
-  render();
-  form.reset();
-}
-//
-// Запит на сервер
-async function getGallery(page = 1) {
-  const BASE_URL = 'https://pixabay.com/api/';
-  const API_KEY = '41332989-a42d222afbe6c07d8529bbab0';
-  const q = localStorage.getItem('key');
-  const image_type = 'photo';
-  const orientation = 'horizontal';
-  const safesearch = 'true';
-  const per_page = 40;
-  //
-  //
-  const queryParams = new URLSearchParams({
-    key: API_KEY,
-    q,
-    image_type,
-    page,
-    per_page,
-    orientation,
-    safesearch,
-  });
-  try {
-    const res = await axios.get(`${BASE_URL}?${queryParams}`);
-    return await res.data;
-  } catch (error) {
-    throw new Error(error);
-  }
-}
-//
-// Відмалювання зображення
-async function render() {
-  try {
-    const data = await getGallery(page);
-    //
-    //
-    if (!data.hits.length > 0) {
-      loadMore.classList.add('visibility-hidden');
-      return Notiflix.Notify.failure(
-        'Sorry, there are no images matching your search query. Please try again.'
-      );
-    }
-    //
-    gallery.insertAdjacentHTML('beforeend', createMarkup(data.hits));
-    //
-    check(data.hits.length, data.totalHits);
-    lightbox.refresh();
-  } catch (error) {
-    console.log('error!', error);
-  }
-}
-//
-// Дозавантаження фото
-async function onLoadMore() {
-  try {
-    page += 1;
-    const data = await render();
-  } catch (error) {
-    console.log('error!', error);
-  }
-  lightbox.refresh();
-}
-//
-//  Перевірка на дозавантаження фото
-function check(current, total) {
-  currentSum += current;
-  if (currentSum >= total) {
-    loadMore.classList.add('visibility-hidden');
-    return Notiflix.Notify.info(
-      "We're sorry, but you've reached the end of search results."
-    );
-  }
-  Notiflix.Notify.success(`Hooray! We found ${currentSum} of ${total} images`);
-  loadMore.classList.remove('visibility-hidden');
-}
+import 'simplelightbox/dist/simple-lightbox.min.css'
 
-// const options = {
-//   rootMargin: '100px',
-//   threshold: 1.0,
-// };
-
-// const observer = new IntersectionObserver(sectionObserver, options);
-// function sectionObserver(enteries, observer) {
-//     enteries.forEach(entry => {
-//         console.log(entry)
-//         if (!entry.isIntersectin) {
-//             return
-//         }
-//         console.log(entry);
-//         headelMore(observer)
-//     }
-//     ) 
-// }
-// let page = 1;
-// let currentQuery = '';
-// let availablePages = 0;
-
-// const lightbox = new SimpleLightbox('.gallery a');
-// searchForm.addEventListener('sumbit', handleSearch);
-
-// function handleSearch(evt) {
-//     evt.preventDefault()
-//       currentQuery = evt.currentTarget.elements.searchQuery.value;
-//   gallery.innerHTML = '';
-//   page = 1;
-//     evt.currentTarget.reset();
+const refs = {
+    searchForm: document.querySelector('.search-form'),
+    GalleryContainer: document.querySelector('.gallery'),
+    LoadMoreBtn: document.querySelector('.load-more'),
     
-//     findPicture(currentQuery, page)
-//         .then(data => {
-//             if (data.hits.length === 0) {
-//             Notify.failure(
-//           'Sorry, there are no images matching your search query. Please try again.'
-//         );
-//         return;
-//             }
-//             galleryEl.insertAdjacentHTML('beforeend',createGallery(data))
-//              availablePages = Math.ceil(data.totalHits / 40);
-//       lightbox.refresh();
+  };
+  const galleryEl = document.querySelector('.gallery .a')
+  console.log(refs.searchForm)
+  console.log(refs.GalleryContainer)
+  console.log(refs.LoadMoreBtn)
 
-//     })
-// }
+  let searchQuery;
+  let page = 1
+  const perPage = 40
+  let simpleLightBox
+
+  refs.searchForm.addEventListener('submit', onSearch);
+  refs.LoadMoreBtn.addEventListener('click', onLoadMoreBtn)
+
+  function onSearch(e) {
+    e.preventDefault();
+    page = 1
+    searchQuery = e.currentTarget.elements.searchQuery.value;
+  console.log(searchQuery);
+  refs.GalleryContainer.innerHTML = ''
+  refs.LoadMoreBtn.classList.add('is-hidden')
+  fetchImages()
+    if (searchQuery === '') {
+      return Notiflix.Notify.failure('The search string cannot be empty. Please specify your search query.');
+
+    }
+
+    fetchImages(searchQuery, page, perPage)
+    .then(({ data }) => {
+      if (data.totalHits === 0) {
+         return Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.')
+      } else {
+        renderGallery(data.hits)
+        simpleLightBox = new SimpleLightbox('.gallery a').refresh()
+        Notiflix.Notify.success(`Hooray! We found ${data.totalHits} images.`)
+
+        if (data.totalHits > perPage) {
+          refs.LoadMoreBtn.classList.remove('is-hidden')
+        }
+      }
+    })
+    .catch(error => console.log(error))
+}
+
+function onLoadMoreBtn() {
+  page += 1
+  simpleLightBox.destroy()
+  fetchImages(searchQuery, page, perPage)
+    .then(({ data }) => {
+      renderGallery(data.hits)
+      simpleLightBox = new SimpleLightbox('.gallery a').refresh()
+
+      const totalPages = Math.ceil(data.totalHits / perPage)
+
+      if (page > totalPages) {
+        
+         Notiflix.Notify.failure("We're sorry, but you've reached the end of search results.")
+         refs.LoadMoreBtn.classList.add('is-hidden')
+      }
+    })
+    .catch(error => console.log(error))
+}
+
+      function renderGallery(images) {
+        const markup = images
+          .map(image => {
+            const { id, largeImageURL, webformatURL, tags, likes, views, comments, downloads } = image
+            return `
+              <a class="gallery__link" href="${largeImageURL}">
+                <div class="gallery-item" id="${id}">
+                  <img class="gallery-item__img" src="${webformatURL}" alt="${tags}" loading="lazy" />
+                  <div class="info">
+                    <p class="info-item"><b>Likes</b>${likes}</p>
+                    <p class="info-item"><b>Views</b>${views}</p>
+                    <p class="info-item"><b>Comments</b>${comments}</p>
+                    <p class="info-item"><b>Downloads</b>${downloads}</p>
+                  </div>
+                </div>
+              </a>
+            `
+          })
+          .join('')
+      
+        refs.GalleryContainer.insertAdjacentHTML('beforeend', markup)
+      }
