@@ -7,22 +7,26 @@
     <title>Document</title>
   </head>
   <body>
-    <form class="search-form" id="search-form">
-      <input
-        class="input"
-        type="text"
-        name="searchQuery"
-        autocomplete="off"
-        placeholder="Search images..."
-      />
-      <button type="submit">Search</button>
-    </form>
-    <div class="box">
-      <div class="gallery">
-        <!-- Картки зображень -->
+    <section class="gallery-section">
+      <div class="container">
+        <div class="form-wrapper">
+          <form class="search-form js-search-form" id="search-form">
+            <input
+              class="search-input"
+              type="text"
+              name="searchQuery"
+              autocomplete="off"
+              placeholder="Search images..."
+            />
+            <button class="search-btn" type="submit">Search</button>
+          </form>
+        </div>
+        <ul class="gallery-list js-gallery list"></ul>
+        <button type="button" class="load-more js-load-more is-hidden">
+          Load more
+        </button>
       </div>
-      <button type="button" class="load-more">Load more</button>
-    </div>
-    <script src="index.js" type="module"></script>
+    </section>
+    <script type="module" src="./index.js"></script>
   </body>
 </html>
